@@ -1,0 +1,36 @@
+name: macOS build
+on:
+  push:
+    branches: [modern]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+      - run: swift test
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15-intel, macos-26, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate --spec project.yml
+      - run: xcodebuild -project MacQuickLookModern.xcodeproj -scheme MacQuickLookModern -configuration Debug -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO build test
+      - run: python3 Scripts/verify-built-bundle.py "$RUNNER_TEMP/derived/Build/Products/Debug/MacQuickLookModern.app"
+      - uses: actions/upload-artifact@v4
+        if: matrix.runner == 'macos-26'
+        with:
+          name: macquicklook-unsigned-ci
+          path: ${{ runner.temp }}/derived/Build/Products/Debug/MacQuickLookModern.app
+          retention-days: 7
+          if-no-files-found: error
