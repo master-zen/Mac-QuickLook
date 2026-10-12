@@ -1,6 +1,7 @@
 name: MacQuickLookModern
 options:
   bundleIdPrefix: cn.masterzen
+  projectFormat: xcode15_3
   deploymentTarget:
     macOS: '13.0'
 settings:
