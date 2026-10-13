@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><fcpxml version="1.10"><resources><asset id="r1"/></resources><library><event name="Example"><project name="Film"><sequence><spine><asset-clip ref="r1"/></spine></sequence></project></event></library></fcpxml>

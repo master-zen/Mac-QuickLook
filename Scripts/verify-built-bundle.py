@@ -1,14 +1,23 @@
 from pathlib import Path
 import plistlib
 import sys
-app = Path(sys.argv[1])
-assert app.is_dir()
-info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
-assert len(info["UTImportedTypeDeclarations"]) == 12
-for name, point in [("QuickLookPreview", "com.apple.quicklook.preview"), ("QuickLookThumbnail", "com.apple.quicklook.thumbnail")]:
-    bundle = app / "Contents/PlugIns" / (name + ".appex")
-    assert bundle.is_dir(), f"Missing {name}"
-    data = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
-    assert data["NSExtension"]["NSExtensionPointIdentifier"] == point
-    assert len(data["NSExtension"]["NSExtensionAttributes"]["QLSupportedContentTypes"]) == 12
-    assert (bundle / "Contents/MacOS" / name).is_file()
+
+app = Path(sys.argv[1]).resolve()
+assert app.is_dir() and app.suffix == '.app'
+info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+assert info['CFBundleIdentifier'] == 'cn.masterzen.MacQuickLookModern'
+assert info['NSPrincipalClass'] == 'NSApplication'
+assert info['LSMinimumSystemVersion'].startswith('13.')
+assert (app / 'Contents/MacOS/MacQuickLookModern').is_file()
+content_types = {item['UTTypeIdentifier'] for item in info['UTImportedTypeDeclarations']}
+assert len(content_types) == 12
+for name, identifier in [('QuickLookPreview', 'com.apple.quicklook.preview'), ('QuickLookThumbnail', 'com.apple.quicklook.thumbnail')]:
+    bundle = app / 'Contents/PlugIns' / (name + '.appex')
+    assert bundle.is_dir(), f'Missing {name}.appex'
+    plist = plistlib.loads((bundle / 'Contents/Info.plist').read_bytes())
+    extension = plist['NSExtension']
+    assert extension['NSExtensionPointIdentifier'] == identifier
+    assert set(extension['NSExtensionAttributes']['QLSupportedContentTypes']) == content_types
+    assert (bundle / 'Contents/MacOS' / name).is_file()
+assert not list(app.rglob('*.qlgenerator'))
+print('macOS bundle verification passed: 12 content types, Preview and Thumbnail extensions embedded')

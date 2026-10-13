@@ -1,95 +1,144 @@
 import Foundation
 
 struct FileSummary {
-    enum Failure: LocalizedError {
-        case unsupported, empty, tooLarge, corrupt
+    enum ReadError: LocalizedError {
+        case unsupportedType
+        case tooLarge
+        case invalidText
+        case invalidFormat
+
         var errorDescription: String? {
             switch self {
-            case .unsupported: return "Unsupported file extension"
-            case .empty: return "File is empty"
-            case .tooLarge: return "File exceeds 8 MiB"
-            case .corrupt: return "Invalid or unsupported file contents"
+            case .unsupportedType: return "This file type is not supported."
+            case .tooLarge: return "This file exceeds the safe preview size limit."
+            case .invalidText: return "This text encoding is not supported."
+            case .invalidFormat: return "The file has an invalid or unsupported structure."
             }
         }
     }
+
     enum Kind: String, CaseIterable {
-        case cube, gpx, srt, vtt, ass, ssa, edl, otio, fcpxml, ase, torrent, gcode
-        static func fromExtension(_ value: String) -> Kind? { Kind(rawValue: value.lowercased()) }
+        case cube = "Color LUT"
+        case gpx = "GPS Track"
+        case srt = "SubRip Subtitles"
+        case vtt = "WebVTT Subtitles"
+        case ass = "Advanced SubStation Alpha"
+        case ssa = "SubStation Alpha"
+        case edl = "Edit Decision List"
+        case otio = "OpenTimelineIO"
+        case fcpxml = "Final Cut Pro XML"
+        case ase = "Adobe Swatch Exchange"
+        case torrent = "BitTorrent Metadata"
+        case gcode = "G-code"
+
+        static func forExtension(_ ext: String) -> Kind? {
+            switch ext.lowercased() {
+            case "cube": return .cube
+            case "gpx": return .gpx
+            case "srt": return .srt
+            case "vtt": return .vtt
+            case "ass": return .ass
+            case "ssa": return .ssa
+            case "edl": return .edl
+            case "otio": return .otio
+            case "fcpxml": return .fcpxml
+            case "ase": return .ase
+            case "torrent": return .torrent
+            case "gcode": return .gcode
+            default: return nil
+            }
+        }
+
+        var fileExtension: String {
+            switch self {
+            case .cube: return "cube"
+            case .gpx: return "gpx"
+            case .srt: return "srt"
+            case .vtt: return "vtt"
+            case .ass: return "ass"
+            case .ssa: return "ssa"
+            case .edl: return "edl"
+            case .otio: return "otio"
+            case .fcpxml: return "fcpxml"
+            case .ase: return "ase"
+            case .torrent: return "torrent"
+            case .gcode: return "gcode"
+            }
+        }
+
+        var isBinary: Bool { self == .ase || self == .torrent }
     }
+
+    struct Swatch {
+        let name: String
+        let model: String
+        let hex: String?
+    }
+
+    struct Coordinate {
+        let latitude: Double
+        let longitude: Double
+        let breakBefore: Bool
+
+        init(latitude: Double, longitude: Double, breakBefore: Bool = false) {
+            self.latitude = latitude
+            self.longitude = longitude
+            self.breakBefore = breakBefore
+        }
+    }
+
+    static let maximumBytes = 8_388_608
+    static let maximumPreviewCharacters = 32_000
+
     let kind: Kind
-    let name: String
-    let properties: [String]
+    let fileName: String
+    let details: [String]
     let text: String
+    let swatches: [Swatch]
+    let track: [Coordinate]
 
-    static func inspect(_ url: URL) throws -> FileSummary {
-        guard let kind = Kind.fromExtension(url.pathExtension) else { throw Failure.unsupported }
-        let file = try FileHandle(forReadingFrom: url)
-        defer { try? file.close() }
-        let data = try file.read(upToCount: 8_388_609) ?? Data()
-        guard !data.isEmpty else { throw Failure.empty }
-        guard data.count <= 8_388_608 else { throw Failure.tooLarge }
-        var properties = ["Size: \(data.count) bytes"]
-        if kind == .ase {
-            guard data.count >= 12, Array(data.prefix(4)) == [65, 83, 69, 70] else { throw Failure.corrupt }
-            properties.append("Adobe Swatch Exchange binary")
-            return FileSummary(kind: kind, name: url.lastPathComponent, properties: properties, text: "Color swatch metadata")
-        }
+    static func read(_ url: URL) throws -> FileSummary {
+        guard let kind = Kind.forExtension(url.pathExtension) else { throw ReadError.unsupportedType }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let data = try handle.read(upToCount: maximumBytes + 1) ?? Data()
+        guard data.count <= maximumBytes else { throw ReadError.tooLarge }
+        guard !data.isEmpty else { throw ReadError.invalidFormat }
         if kind == .torrent {
-            guard data.first == 100, data.last == 101 else { throw Failure.corrupt }
-            properties.append("BitTorrent metadata, no network access")
-            return FileSummary(kind: kind, name: url.lastPathComponent, properties: properties, text: "Binary torrent file")
+            return FileSummary(kind: kind, fileName: url.lastPathComponent, details: try TorrentDecoder.metadata(data), text: "", swatches: [], track: [])
         }
-        let contents: String
-        if data.starts(with: [0xFF, 0xFE]), let value = String(data: data, encoding: .utf16LittleEndian) {
-            contents = value
-        } else if data.starts(with: [0xFE, 0xFF]), let value = String(data: data, encoding: .utf16BigEndian) {
-            contents = value
-        } else if let value = String(data: data, encoding: .utf8) {
-            contents = value
-        } else { throw Failure.corrupt }
-        guard !contents.contains("\0") else { throw Failure.corrupt }
-        let lines = contents.components(separatedBy: .newlines)
-        switch kind {
-        case .cube:
-            let sizes = lines.filter { $0.trimmingCharacters(in: .whitespaces).hasPrefix("LUT_3D_SIZE ") }
-            guard sizes.count == 1 else { throw Failure.corrupt }
-            properties.append(sizes[0])
-        case .gpx:
-            guard contents.contains("<gpx"), !contents.contains("<!DOCTYPE"), !contents.contains("<!ENTITY") else { throw Failure.corrupt }
-            properties.append("Track points: \(contents.components(separatedBy: "<trkpt").count - 1)")
-        case .srt, .vtt:
-            properties.append("Subtitle cues: \(lines.filter { $0.contains("-->") }.count)")
-        case .ass, .ssa:
-            properties.append("Dialogue events: \(lines.filter { $0.hasPrefix("Dialogue:") }.count)")
-        case .edl:
-            properties.append("Edit events: \(lines.filter { $0.first?.isNumber == true }.count)")
-        case .otio:
-            guard (try? JSONSerialization.jsonObject(with: data)) != nil else { throw Failure.corrupt }
-            properties.append("OpenTimelineIO JSON document")
-        case .fcpxml:
-            guard contents.contains("<fcpxml"), !contents.contains("<!DOCTYPE"), !contents.contains("<!ENTITY") else { throw Failure.corrupt }
-            properties.append("Final Cut Pro XML document")
-        case .gcode:
-            properties.append("Motion lines: \(lines.filter { $0.hasPrefix("G0 ") || $0.hasPrefix("G1 ") }.count)")
-        default: break
+        if kind == .ase {
+            let swatches = try ASEDecoder.parse(data)
+            let count = swatches.count
+            let models = Set(swatches.map(\.model)).sorted().joined(separator: ", ")
+            return FileSummary(kind: kind, fileName: url.lastPathComponent, details: ["Swatches: \(count)", "Models: \(models)"], text: "", swatches: Array(swatches.prefix(120)), track: [])
         }
-        return FileSummary(kind: kind, name: url.lastPathComponent, properties: properties, text: String(contents.prefix(32_000)))
+        let input = try decodeText(data)
+        let result: [String]
+        var track: [Coordinate] = []
+        var swatches: [Swatch] = []
+        if kind == .gpx {
+            let parsed = try MetadataDecoder.gpx(input)
+            result = parsed.details
+            track = parsed.coordinates
+        } else {
+            result = try MetadataDecoder.decode(kind: kind, text: input, data: data)
+            if kind == .cube { swatches = MetadataDecoder.cubeSwatches(input) }
+        }
+        let excerpt = String(input.prefix(maximumPreviewCharacters))
+        return FileSummary(kind: kind, fileName: url.lastPathComponent, details: ["Size: \(data.count) bytes"] + result, text: excerpt, swatches: swatches, track: track)
     }
 
-    static func escaped(_ input: String) -> String {
-        input.replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'", with: "&#39;")
-    }
-
-    func html() -> Data {
-        let items = properties.map { "<li>\(Self.escaped($0))</li>" }.joined()
-        let markup = """
-        <!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><style>body{font:14px -apple-system,system-ui;padding:25px;background:#fff;color:#222;line-height:1.5}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eef0f4;padding:15px;border-radius:8px}@media(prefers-color-scheme:dark){body{background:#202126;color:#eee}pre{background:#2c2d33}}</style></head>
-        <body><h2>\(Self.escaped(name))</h2><p>\(Self.escaped(kind.rawValue.uppercased()))</p><ul>\(items)</ul><pre>\(Self.escaped(text))</pre></body></html>
-        """
-        return Data(markup.utf8)
+    static func decodeText(_ data: Data) throws -> String {
+        let text: String?
+        if data.starts(with: [0xFF, 0xFE]) {
+            text = String(data: data, encoding: .utf16LittleEndian)
+        } else if data.starts(with: [0xFE, 0xFF]) {
+            text = String(data: data, encoding: .utf16BigEndian)
+        } else {
+            text = String(data: data, encoding: .utf8)
+        }
+        guard let text = text, !text.contains("\0") else { throw ReadError.invalidText }
+        return text.hasPrefix("\u{FEFF}") ? String(text.dropFirst()) : text
     }
 }
