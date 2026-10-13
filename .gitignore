@@ -1,0 +1,7 @@
+.DS_Store
+.build/
+DerivedData/
+Dist/
+*.xcuserstate
+xcuserdata/
+MacQuickLookModern.xcodeproj/

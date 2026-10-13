@@ -1,0 +1,57 @@
+name: Build and test
+on:
+  push:
+    branches: [modern]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || github.head_ref != 'modern'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit metadata
+        run: python3 Scripts/audit.py
+      - name: Check Python scripts
+        run: python3 -m py_compile Scripts/audit.py Scripts/verify-built-bundle.py
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.0'
+      - name: Test core decoders
+        run: swift test
+  macos:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || github.head_ref != 'modern'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15-intel, macos-26, xcode-27]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Audit project
+        run: python3 Scripts/audit.py
+      - name: Probe real macOS UTI associations
+        run: swift Scripts/probe-filetypes.swift
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+      - name: Build and test
+        run: |
+          xcodebuild -project MacQuickLookModern.xcodeproj -scheme MacQuickLookModern -configuration Debug -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/macquicklook-derived" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build test
+      - name: Verify embedded extensions
+        run: python3 Scripts/verify-built-bundle.py "$RUNNER_TEMP/macquicklook-derived/Build/Products/Debug/MacQuickLookModern.app"
+      - name: Upload unsigned test build
+        if: matrix.runner == 'macos-26'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacQuickLookModern-unsigned-ci
+          path: ${{ runner.temp }}/macquicklook-derived/Build/Products/Debug/MacQuickLookModern.app
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,7 @@
+[Script Info]
+Title: Example
+ScriptType: v4.00+
+[V4+ Styles]
+Style: Default,Arial,30
+[Events]
+Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Sample subtitle
