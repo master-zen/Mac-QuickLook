@@ -1,0 +1,46 @@
+name: Alpha release
+on:
+  push:
+    branches: [modern]
+    paths:
+      - .github/workflows/release-preview.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: alpha-release-v0.5.0
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/modern' && github.repository == 'master-zen/Mac-QuickLook'
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate metadata
+        run: python3 Scripts/audit.py
+      - name: Check core tests
+        run: swift test
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Build and test app
+        run: |
+          xcodebuild -project MacQuickLookModern.xcodeproj -scheme MacQuickLookModern -configuration Debug -destination 'platform=macOS' -derivedDataPath "$RUNNER_TEMP/derived" CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build test
+      - name: Validate extension bundles
+        run: python3 Scripts/verify-built-bundle.py "$RUNNER_TEMP/derived/Build/Products/Debug/MacQuickLookModern.app"
+      - name: Package unsigned developer build
+        run: |
+          /usr/bin/ditto -c -k --keepParent "$RUNNER_TEMP/derived/Build/Products/Debug/MacQuickLookModern.app" "$RUNNER_TEMP/MacQuickLookModern-UNSIGNED-DEV.zip"
+          shasum -a 256 "$RUNNER_TEMP/MacQuickLookModern-UNSIGNED-DEV.zip" > "$RUNNER_TEMP/MacQuickLookModern-UNSIGNED-DEV.zip.sha256"
+      - name: Publish alpha pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TAG="v0.5.0-alpha.1"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Existing release $TAG will not be overwritten"
+            exit 0
+          fi
+          gh release create "$TAG" "$RUNNER_TEMP/MacQuickLookModern-UNSIGNED-DEV.zip" "$RUNNER_TEMP/MacQuickLookModern-UNSIGNED-DEV.zip.sha256" --target "$GITHUB_SHA" --prerelease --latest=false --title "Mac QuickLook Modern v0.5.0 Alpha 1" --notes-file Docs/RELEASE_NOTES_v0.5.0-alpha.1.md
