@@ -88,6 +88,10 @@ swift test
 
 文件大小限制 8 MiB，超出立即拒绝；解析器不执行代码、不加载网络资源、不解析 XML DTD/外部实体，不运行插件二进制。UTF-8 文本和带 BOM 的 UTF-16 文本受支持，其他历史字符编码未实现。ASE 色板的非 RGB 颜色只报告模型，避免不可靠的色彩转换。复杂视频解码、3D 实时渲染及所有旧插件的全量移植**未包含在当前版本**。
 
+## Finder 诊断（只读）
+
+安装完成后，可在 macOS 终端执行 `zsh Scripts/diagnose-finder.zsh /path/to/example.cube`，查看系统识别出的 UTI 和扩展注册状态。该脚本不重置 Quick Look 缓存、不更改文件关联，也不打开文件。
+
 ## Quick Look-only invariant
 
 - 只有 `.appex` 负责解码和生成预览/缩略图；宿主 App 是最低限度的容器和提示界面。

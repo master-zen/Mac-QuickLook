@@ -23,6 +23,10 @@ pluginkit -m -p com.apple.quicklook.thumbnail
 6. 如果 Finder 没有调用本扩展，先检查安装、系统扩展设置、UTI 匹配与其他应用冲突，不通过删除系统扩展或关闭 SIP 来“修复”。
 7. 安装、卸载、重新安装，确认 Quick Look 注册状态一致且未污染老式 `QuickLook` 目录。
 
+## Non-invasive diagnostics
+
+Run `zsh Scripts/diagnose-finder.zsh Fixtures/example.cube` on a Mac with the signed app installed. It prints both extension registrations and Finder's recognized UTI without changing handlers. A matching UTI is necessary, but **not sufficient**, to establish that Finder selected our extension; verify Space-bar preview and thumbnail directly.
+
 ## Security and regressions
 
 - 输入包含 `<script>`、HTML 实体或非常规 Unicode 的文件，不应执行脚本或访问远程资源。
