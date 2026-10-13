@@ -21,7 +21,7 @@ pluginkit -m -p com.apple.quicklook.thumbnail
 
 3. 使用 `mdls -name kMDItemContentType Fixtures/example.cube` 检查系统实际匹配的 UTI；不能只依据后缀推定处理器已被选中。
 4. 在 Finder 选择各个 Fixtures 文件并按 Space，分别检查完整预览与缩略图。
-5. 在 Finder 文件“打开方式”和双击行为中验证本 App **不是**可选打开程序、不会改变默认打开程序；宿主 App 内没有选择/打开文件功能。
+5. 验证 12 条 `CFBundleDocumentTypes` 的 `CFBundleTypeRole=None`、`LSHandlerRank=None`，再在 Finder “打开方式”和双击行为中检查本 App 没有成为文件打开程序，也未改变默认程序；宿主 App 内没有选择/打开文件功能。
 6. 如果 Finder 没有调用本扩展，先检查安装、系统扩展设置、UTI 匹配与其他应用冲突，不通过删除系统扩展或关闭 SIP 来“修复”。
 7. 安装、卸载、重新安装，确认 Quick Look 注册状态一致且未污染老式 `QuickLook` 目录。
 

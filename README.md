@@ -7,7 +7,7 @@ This is a clean-room implementation inspired by the [Mac-QuickLook catalog](http
 ## 当前状态 / Status
 
 - 已实现 12 类文件解析器；核心 Swift 代码可使用 SwiftPM 在 Linux 上测试。
-- 已提供 XcodeGen macOS 宿主容器、两种 Quick Look 扩展、CI、构建后完整性校验、打包/发布脚本。宿主不注册文件打开关联，也不提供文件选择或查看器。
+- 已提供 XcodeGen macOS 宿主容器、两种 Quick Look 扩展、CI、构建后完整性校验、打包/发布脚本。宿主不声明文件打开角色，也不提供文件选择或查看器。
 - v0.6.0：删除宿主 App 内置文件打开器和全部文档打开关联，只保留 Finder Quick Look 扩展。\n- v0.5.0：恢复完整解析模块，33 项 Swift 核心单元测试、Swift 源文件语法解析和本地元数据一致性检查；CI 增加 macOS 构建后 `.app/Contents/PlugIns` 校验。
 - 最新代码需以 GitHub Actions 实际运行结果为准。**Finder 实际调用、macOS 13 验收、Developer ID 签名与 Apple 公证仍未完成。**
 - 87 个原始二进制目录/安装包仅作为迁移登记，**并未全部重新实现**。见 `Docs/LEGACY_INVENTORY.csv`。
@@ -95,5 +95,5 @@ swift test
 ## Quick Look-only invariant
 
 - 只有 `.appex` 负责解码和生成预览/缩略图；宿主 App 是最低限度的容器和提示界面。
-- `UTImportedTypeDeclarations` 告诉系统如何识别扩展名；**不声明** `CFBundleDocumentTypes`。已有 App 的默认打开方式保持原样。
+- `UTImportedTypeDeclarations` 告诉系统如何识别扩展名；使用 `CFBundleDocumentTypes` 仅登记 12 种类型，但所有条目严格设置 `CFBundleTypeRole=None`、`LSHandlerRank=None`，不声明打开/编辑文件能力；Finder 真正调用仍取决于实际 UTI 和扩展签名注册。
 - 受 macOS 文件类型系统和提供程序选择策略影响，Finder 是否选用本扩展仍须通过 `mdls` 和 `pluginkit` 实机验证。

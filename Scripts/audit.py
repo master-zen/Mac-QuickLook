@@ -14,8 +14,12 @@ assert app['LSMinimumSystemVersion'] == '13.0'
 entitlements = plistlib.loads((root / 'App/Entitlements.plist').read_bytes())
 assert entitlements['com.apple.security.app-sandbox'] is True
 assert 'com.apple.security.files.user-selected.read-only' not in entitlements
-# Imported UTIs are for Finder classification. The host must not register document handlers.
-assert 'CFBundleDocumentTypes' not in app
+# Metadata-only Launch Services registration must NEVER claim file opening.
+# CFBundleTypeRole=None means the host cannot operate on these documents.
+docs = app['CFBundleDocumentTypes']
+assert len(docs) == len(ids)
+assert {uti for item in docs for uti in item['LSItemContentTypes']} == ids
+assert all(item['CFBundleTypeRole'] == 'None' and item['LSHandlerRank'] == 'None' for item in docs)
 host_source = (root / 'App/MacQuickLookModernApp.swift').read_text()
 for forbidden in ['NSOpenPanel', 'DocumentGroup(', 'fileImporter(', 'FileSummary.read(', 'startAccessingSecurityScopedResource']:
     assert forbidden not in host_source, f'Quick Look-only host must not use {forbidden}'

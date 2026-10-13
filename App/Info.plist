@@ -233,6 +233,94 @@
 			</dict>
 		</dict>
 	</array>
+	<!-- Register file type information with Launch Services; no file-opening role. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key><string>3D Color Lookup Table</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.cube</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>GPS Exchange</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.gpx</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>SubRip Subtitles</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.srt</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>WebVTT Subtitles</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.vtt</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>Advanced SubStation Alpha</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.ass</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>SubStation Alpha</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.ssa</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>Edit Decision List</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.edl</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>OpenTimelineIO</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.otio</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>Final Cut Pro XML</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.fcpxml</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>Adobe Swatch Exchange</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.ase</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>BitTorrent Metadata</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.torrent</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key><string>G-code</string>
+			<key>LSItemContentTypes</key>
+			<array><string>cn.masterzen.quicklook.gcode</string></array>
+			<key>CFBundleTypeRole</key><string>None</string>
+			<key>LSHandlerRank</key><string>None</string>
+		</dict>
+	</array>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSPrincipalClass</key>

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.1 — Quick Look registration correction
+
+- Reintroduces metadata-only document type registration with CFBundleTypeRole=None and LSHandlerRank=None so Launch Services can record custom UTIs without granting the host file-open or edit roles.
+- Audits and built-bundle verifier assert all 12 registrations have non-opening roles.
+- Adds macOS UTI probing and read-only signing/registration diagnostics after reports that an unsigned alpha failed in Finder.
+- Still no signed/notarized distributable: this corrects registration metadata but requires a signed real Finder test.
+
+
 ## 0.6.0 — 2026-10-13 (Quick Look-only architecture)
 
 - Removes the host application's file-picker and in-app inspector, including sandbox permission to read user-selected files.

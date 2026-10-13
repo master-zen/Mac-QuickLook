@@ -11,8 +11,11 @@ assert info['LSMinimumSystemVersion'].startswith('13.')
 assert (app / 'Contents/MacOS/MacQuickLookModern').is_file()
 content_types = {item['UTTypeIdentifier'] for item in info['UTImportedTypeDeclarations']}
 assert len(content_types) == 12
-# A Finder-only Quick Look app must never become a file-opening candidate.
-assert 'CFBundleDocumentTypes' not in info
+# Registration for Quick Look without claiming an opening role.
+docs = info['CFBundleDocumentTypes']
+assert len(docs) == len(content_types)
+assert {uti for item in docs for uti in item['LSItemContentTypes']} == content_types
+assert all(item['CFBundleTypeRole'] == 'None' and item['LSHandlerRank'] == 'None' for item in docs)
 # Entitlements are verified at source/CI with Scripts/audit.py; a signed bundle
 # can be inspected with codesign separately.
 for name, identifier in [('QuickLookPreview', 'com.apple.quicklook.preview'), ('QuickLookThumbnail', 'com.apple.quicklook.thumbnail')]:
