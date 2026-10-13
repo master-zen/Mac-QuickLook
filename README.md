@@ -88,9 +88,9 @@ swift test
 
 文件大小限制 8 MiB，超出立即拒绝；解析器不执行代码、不加载网络资源、不解析 XML DTD/外部实体，不运行插件二进制。UTF-8 文本和带 BOM 的 UTF-16 文本受支持，其他历史字符编码未实现。ASE 色板的非 RGB 颜色只报告模型，避免不可靠的色彩转换。复杂视频解码、3D 实时渲染及所有旧插件的全量移植**未包含在当前版本**。
 
-## Finder 诊断（只读）
+## 下载的开发版本为什么可能无法预览\n\n当前 GitHub Release 中的 `UNSIGNED-DEV` 是未经 Apple Developer ID 签名、公证的 CI 编译产物，不能承诺像正式 macOS 应用一样注册 Finder Quick Look 扩展。仅下载 ZIP、解压或启动 App 并不等于扩展已经启用。此前将它放在 Releases 供直接安装测试属于发布验收缺陷，后续正式版必须先通过签名、公证、安装和 Finder 调度测试。\n\n系统按 **实际 UTI** 而非单纯后缀选择 Quick Look 扩展。即使自定义 UTI 与两个扩展的 `QLSupportedContentTypes` 一致，如果系统/其他应用把文件映射到不同 UTI，仍可能无法命中。CI 现运行 `Scripts/probe-filetypes.swift`，输出每个文件扩展名在不同 macOS Runner 上解析得到的 UTI。\n\n## Finder 诊断（只读）
 
-安装完成后，可在 macOS 终端执行 `zsh Scripts/diagnose-finder.zsh /path/to/example.cube`，查看系统识别出的 UTI 和扩展注册状态。该脚本不重置 Quick Look 缓存、不更改文件关联，也不打开文件。
+安装完成后，可在 macOS 终端执行 `zsh Scripts/diagnose-finder.zsh /path/to/example.cube`，查看系统识别出的 UTI、扩展注册状态、签名以及 Gatekeeper 判定。该脚本不重置 Quick Look 缓存、不更改文件关联，也不打开文件。
 
 ## Quick Look-only invariant
 

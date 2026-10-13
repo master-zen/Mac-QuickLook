@@ -5,6 +5,8 @@
 - 在 Intel 和 Apple Silicon 分别执行 XcodeGen 生成、Debug Build 和 XCTest；保存编译日志。
 - 通过 `Scripts/verify-built-bundle.py` 检查构建产物中两个 `.appex` 的可执行文件和 UTI 声明。
 - 仅通过 SwiftPM Linux 核心测试或构建后结构检查不足以宣布 Finder 预览可运行。
+- CI 在 macOS 上执行 `swift Scripts/probe-filetypes.swift`，观察系统实际 UTI 与扩展声明不匹配的项目；不能只相信静态 plist 一致性检查。
+- 公开分发必须验证宿主 App 和两个 `.appex` 的代码签名与 Gatekeeper，不得将 `CODE_SIGNING_ALLOWED=NO` 的 CI 产物视作可安装正式版。
 - 在 macOS 13、14、15、26、27 各测试一个受系统支持的设备或虚拟机环境。27 仅 Apple Silicon。
 
 ## Installation and extension registration
@@ -25,7 +27,7 @@ pluginkit -m -p com.apple.quicklook.thumbnail
 
 ## Non-invasive diagnostics
 
-Run `zsh Scripts/diagnose-finder.zsh Fixtures/example.cube` on a Mac with the signed app installed. It prints both extension registrations and Finder's recognized UTI without changing handlers. A matching UTI is necessary, but **not sufficient**, to establish that Finder selected our extension; verify Space-bar preview and thumbnail directly.
+Run `zsh Scripts/diagnose-finder.zsh Fixtures/example.cube Fixtures/example.gpx` on the affected Mac. It prints signing, Gatekeeper, extension registrations and Finder's recognized UTIs without changing handlers. A matching UTI is necessary, but **not sufficient**, to establish that Finder selected our extension; verify Space-bar preview and thumbnail directly.
 
 ## Security and regressions
 

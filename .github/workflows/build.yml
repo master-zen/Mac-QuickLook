@@ -38,6 +38,8 @@ jobs:
         run: brew install xcodegen
       - name: Audit project
         run: python3 Scripts/audit.py
+      - name: Probe real macOS UTI associations
+        run: swift Scripts/probe-filetypes.swift
       - name: Generate project
         run: xcodegen generate --spec project.yml
       - name: Build and test
