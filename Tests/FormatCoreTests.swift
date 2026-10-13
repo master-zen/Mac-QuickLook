@@ -242,3 +242,73 @@ extension FormatCoreTests {
         XCTAssertTrue(html.contains("default-src 'none'"))
     }
 }
+
+extension FormatCoreTests {
+    func testCubeRejectsIncompleteGrid() throws {
+        let url = try makeFile("incomplete.cube", content: "LUT_3D_SIZE 2\n0 0 0\n1 1 1\n")
+        defer { clear(url) }
+        XCTAssertThrowsError(try FileSummary.read(url))
+    }
+
+    func testCubeRejectsDuplicateDimension() throws {
+        let input = "LUT_3D_SIZE 2\nLUT_3D_SIZE 2\n" + Array(repeating: "0 0 0", count: 8).joined(separator: "\n")
+        let url = try makeFile("duplicate.cube", content: input)
+        defer { clear(url) }
+        XCTAssertThrowsError(try FileSummary.read(url))
+    }
+
+    func testCubeRejectsDataBeforeDimensions() throws {
+        let input = "0 0 0\nLUT_1D_SIZE 2\n1 1 1\n"
+        let url = try makeFile("order.cube", content: input)
+        defer { clear(url) }
+        XCTAssertThrowsError(try FileSummary.read(url))
+    }
+
+    func testCombinedCubeCorrect3DSampling() throws {
+        let input = "LUT_1D_SIZE 2\nLUT_3D_SIZE 2\n0.3 0.3 0.3\n0.8 0.8 0.8\n0 0 0\n0 0 1\n0 1 0\n0 1 1\n1 0 0\n1 0 1\n1 1 0\n1 1 1\n"
+        let url = try makeFile("combined.cube", content: input)
+        defer { clear(url) }
+        let summary = try FileSummary.read(url)
+        XCTAssertTrue(summary.details.contains("Entries: 10"))
+        XCTAssertEqual(summary.swatches.compactMap(\.hex), ["#000000", "#FFFFFF"])
+    }
+
+    func testCubeOneDimensionalLUT() throws {
+        let input = "TITLE Test\nLUT_1D_SIZE 2\n0 0 0\n1 1 1\n"
+        let url = try makeFile("one.cube", content: input)
+        defer { clear(url) }
+        let summary = try FileSummary.read(url)
+        XCTAssertTrue(summary.details.contains("LUT_1D_SIZE: 2"))
+        XCTAssertEqual(summary.swatches.compactMap(\.hex), ["#000000", "#FFFFFF"])
+    }
+
+    func testCubeDoesNotRetainEntireHugeGrid() throws {
+        let lines = ["LUT_1D_SIZE 20000"] + Array(repeating: "0.25 0.50 0.75", count: 20000)
+        let url = try makeFile("large.cube", content: lines.joined(separator: "\n"))
+        defer { clear(url) }
+        let summary = try FileSummary.read(url)
+        XCTAssertEqual(summary.swatches.count, 20)
+        XCTAssertTrue(summary.details.contains("Entries: 20000"))
+    }
+
+    func testTorrentRejectsDuplicateBencodedKeys() throws {
+        let input = "d4:infod6:lengthi1e6:lengthi2e4:name1:aee"
+        XCTAssertThrowsError(try TorrentDecoder.metadata(Data(input.utf8)))
+    }
+
+    func testGPXRejectsMixedCaseDTD() throws {
+        let xml = "<!DoCtYpE gpx><gpx><trk><trkseg/></trk></gpx>"
+        let url = try makeFile("mixed.gpx", content: xml)
+        defer { clear(url) }
+        XCTAssertThrowsError(try FileSummary.read(url))
+    }
+
+    func testXMLTextInjectionEscapedInPreview() throws {
+        let source = "<fcpxml><project name=\"&quot; onload=alert(1)\"/></fcpxml>"
+        let url = try makeFile("injection.fcpxml", content: source)
+        defer { clear(url) }
+        let html = String(decoding: PreviewHTML.render(try FileSummary.read(url)), as: UTF8.self)
+        XCTAssertTrue(html.contains("&lt;fcpxml&gt;"))
+        XCTAssertFalse(html.contains("<project"))
+    }
+}

@@ -16,10 +16,31 @@ enum MetadataDecoder {
     }
 
     static func cube(_ text: String) throws -> [String] {
+        let parsed = try cubeGrid(text)
+        var details: [String] = []
+        if let title = parsed.title { details.append("Title: \(title)") }
+        if let size = parsed.oneDimensionalSize { details.append("LUT_1D_SIZE: \(size)") }
+        if let size = parsed.threeDimensionalSize { details.append("LUT_3D_SIZE: \(size)") }
+        details.append("Entries: \(parsed.entries)")
+        details.append("Grid: complete")
+        return details
+    }
+
+    private struct CubeGrid {
+        let title: String?
+        let oneDimensionalSize: Int?
+        let threeDimensionalSize: Int?
+        let entries: Int
+        let samples: [Int: [Double]]
+    }
+
+    private static func cubeGrid(_ text: String) throws -> CubeGrid {
         var title: String?
-        var dimensions: [String] = []
-        var expectedEntries: Int?
+        var oneDimensionalSize: Int?
+        var threeDimensionalSize: Int?
         var entries = 0
+        var samples: [Int: [Double]] = [:]
+        var sampleIndexByEntry: [Int: Int] = [:]
         for rawLine in text.components(separatedBy: .newlines) {
             let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
             if line.isEmpty || line.hasPrefix("#") { continue }
@@ -27,66 +48,56 @@ enum MetadataDecoder {
             guard let first = parts.first else { continue }
             switch first.uppercased() {
             case "TITLE":
+                guard title == nil, entries == 0 else { throw FileSummary.ReadError.invalidFormat }
                 title = String(line.dropFirst(first.count)).trimmingCharacters(in: .whitespacesAndNewlines)
-            case "LUT_3D_SIZE", "LUT_1D_SIZE":
-                guard parts.count == 2, let count = Int(parts[1]), (2...256).contains(count) else { throw FileSummary.ReadError.invalidFormat }
-                dimensions.append("\(first.uppercased()): \(count)")
-                expectedEntries = first.uppercased() == "LUT_3D_SIZE" ? count * count * count : count
+            case "LUT_3D_SIZE":
+                guard entries == 0, threeDimensionalSize == nil, parts.count == 2,
+                      let count = Int(parts[1]), (2...256).contains(count) else { throw FileSummary.ReadError.invalidFormat }
+                threeDimensionalSize = count
+            case "LUT_1D_SIZE":
+                guard entries == 0, oneDimensionalSize == nil, parts.count == 2,
+                      let count = Int(parts[1]), (2...65_536).contains(count) else { throw FileSummary.ReadError.invalidFormat }
+                oneDimensionalSize = count
             case "DOMAIN_MIN", "DOMAIN_MAX":
-                guard parts.count == 4, parts.dropFirst().allSatisfy({ Double($0)?.isFinite == true }) else { throw FileSummary.ReadError.invalidFormat }
+                guard entries == 0, parts.count == 4,
+                      parts.dropFirst().allSatisfy({ Double($0)?.isFinite == true }) else { throw FileSummary.ReadError.invalidFormat }
             default:
-                if parts.count == 3 && parts.allSatisfy({ Double($0)?.isFinite == true }) {
-                    entries += 1
-                } else {
-                    throw FileSummary.ReadError.invalidFormat
+                guard oneDimensionalSize != nil || threeDimensionalSize != nil,
+                      parts.count == 3 else { throw FileSummary.ReadError.invalidFormat }
+                let triples = parts.compactMap { Double($0) }
+                guard triples.count == 3, triples.allSatisfy(\.isFinite) else { throw FileSummary.ReadError.invalidFormat }
+                if entries == 0 {
+                    let size = threeDimensionalSize ?? oneDimensionalSize ?? 0
+                    let sampleCount = min(size, 20)
+                    let offset = threeDimensionalSize == nil ? 0 : (oneDimensionalSize ?? 0)
+                    if sampleCount > 0 {
+                        for position in 0..<sampleCount {
+                            let index = Int((Double(position) * Double(size - 1) / Double(max(1, sampleCount - 1))).rounded())
+                            let sampledEntry = offset + (threeDimensionalSize == nil ? index : index * (size * size + size + 1))
+                            sampleIndexByEntry[sampledEntry] = position
+                        }
+                    }
                 }
+                if let position = sampleIndexByEntry[entries] { samples[position] = triples }
+                entries += 1
             }
         }
-        guard !dimensions.isEmpty, entries > 0 else { throw FileSummary.ReadError.invalidFormat }
-        var lines: [String] = dimensions
-        if let title = title { lines.insert("Title: \(title)", at: 0) }
-        lines.append("Entries: \(entries)")
-        if let expectedEntries = expectedEntries { lines.append(entries == expectedEntries ? "Grid: complete" : "Grid: incomplete or nonstandard") }
-        return lines
+        let expected = (oneDimensionalSize ?? 0) + (threeDimensionalSize.map { $0 * $0 * $0 } ?? 0)
+        guard expected > 0, entries == expected else { throw FileSummary.ReadError.invalidFormat }
+        return CubeGrid(title: title, oneDimensionalSize: oneDimensionalSize,
+                        threeDimensionalSize: threeDimensionalSize, entries: entries, samples: samples)
     }
 
     static func cubeSwatches(_ text: String) -> [FileSummary.Swatch] {
-        var gridSize: Int?
-        var is3D = false
-        for line in text.components(separatedBy: .newlines) {
-            let parts = line.split(whereSeparator: \.isWhitespace)
-            guard parts.count == 2, let size = Int(parts[1]) else { continue }
-            if parts[0].uppercased() == "LUT_3D_SIZE" {
-                gridSize = size
-                is3D = true
-                break
-            }
-            if parts[0].uppercased() == "LUT_1D_SIZE" {
-                gridSize = size
-                break
-            }
-        }
-        guard let size = gridSize, (2...256).contains(size) else { return [] }
-        let targets = Set((0..<min(size, 20)).map { position -> Int in
-            let index = Int((Double(position) * Double(size - 1) / Double(max(1, min(size, 20) - 1))).rounded())
-            return is3D ? index * (size * size + size + 1) : index
-        })
-        var index = 0
-        var colors: [(Int, String)] = []
-        for rawLine in text.components(separatedBy: .newlines) {
-            let parts = rawLine.split(whereSeparator: \.isWhitespace)
-            let values = parts.compactMap { Double($0) }
-            guard parts.count == 3, values.count == 3, values.allSatisfy({ $0.isFinite }) else { continue }
-            if targets.contains(index) {
-                let channels = values.map { Int((min(1, max(0, $0)) * 255).rounded()) }
-                let hex = String(format: "#%02X%02X%02X", channels[0], channels[1], channels[2])
-                colors.append((index, hex))
-            }
-            index += 1
-            if colors.count == targets.count { break }
-        }
-        return colors.sorted { $0.0 < $1.0 }.enumerated().map { order, item in
-            FileSummary.Swatch(name: "Sample \(order + 1)", model: "RGB", hex: item.1)
+        guard let grid = try? cubeGrid(text) else { return [] }
+        let count = grid.threeDimensionalSize ?? grid.oneDimensionalSize ?? 0
+        guard count >= 2 else { return [] }
+        let numberOfSamples = min(count, 20)
+        return (0..<numberOfSamples).compactMap { position -> FileSummary.Swatch? in
+            guard let triplet = grid.samples[position] else { return nil }
+            let channels = triplet.map { Int((min(1, max(0, $0)) * 255).rounded()) }
+            let hex = String(format: "#%02X%02X%02X", channels[0], channels[1], channels[2])
+            return FileSummary.Swatch(name: "Sample \(position + 1)", model: "RGB", hex: hex)
         }
     }
 

@@ -57,6 +57,7 @@ enum TorrentDecoder {
                 while offset < bytes.count && bytes[offset] != 101 {
                     let key = try parseBytes()
                     guard let keyText = String(data: key, encoding: .utf8) else { throw FileSummary.ReadError.invalidFormat }
+                    guard result[keyText] == nil else { throw FileSummary.ReadError.invalidFormat }
                     result[keyText] = try parse(depth: depth + 1)
                 }
                 guard offset < bytes.count else { throw FileSummary.ReadError.invalidFormat }

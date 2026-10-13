@@ -8,7 +8,7 @@ This is a clean-room implementation inspired by the [Mac-QuickLook catalog](http
 
 - 已实现 12 类文件解析器；核心 Swift 代码可使用 SwiftPM 在 Linux 上测试。
 - 已提供 XcodeGen macOS App 工程配置、两种 Quick Look 扩展、统一安装界面、CI、构建后完整性校验、打包/发布脚本。
-- v0.5.0：恢复完整解析模块，22 项 Swift 核心单元测试、Swift 源文件语法解析和本地元数据一致性检查；CI 增加 macOS 构建后 `.app/Contents/PlugIns` 校验。
+- v0.5.0：恢复完整解析模块，31 项 Swift 核心单元测试、Swift 源文件语法解析和本地元数据一致性检查；CI 增加 macOS 构建后 `.app/Contents/PlugIns` 校验。
 - 最新代码需以 GitHub Actions 实际运行结果为准。**Finder 实际调用、macOS 13 验收、Developer ID 签名与 Apple 公证仍未完成。**
 - 87 个原始二进制目录/安装包仅作为迁移登记，**并未全部重新实现**。见 `Docs/LEGACY_INVENTORY.csv`。
 
@@ -16,7 +16,7 @@ This is a clean-room implementation inspired by the [Mac-QuickLook catalog](http
 
 | 类别 | 后缀 | 当前实际实现 |
 | --- | --- | --- |
-| 调色 | `.cube` | LUT 类型、维度、数据条目数、对角线颜色采样与文本预览；不渲染 LUT 效果 |
+| 调色 | `.cube` | 完整 LUT 网格校验、混合 1D/3D LUT、对角线颜色采样与文本预览；不渲染 LUT 效果 |
 | 色板 | `.ase` | Adobe Swatch Exchange 名称、颜色模型、RGB 色块；非 RGB 只显示模型 |
 | 定位 | `.gpx` | 轨迹、航点、路线统计、离线路径轮廓（保留轨迹分段）、源文本；不联网加载地图瓦片 |
 | 字幕 | `.srt`, `.vtt`, `.ass`, `.ssa` | 事件/样式数、内容文本 |

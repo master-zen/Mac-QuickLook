@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 — 2026-10-13
+
+- Restores the complete decoders, fixtures, offline visualizations and legacy inventory in the remote modern branch.
+- Validates complete CUBE grids, duplicate sizes, mixed 1D/3D sampling, and bounded color sampling memory.
+- Rejects duplicate bencode dictionary keys and adds nine regression tests.
+- Retains modern Quick Look protocol conformance and macOS 14-compatible Xcode project format.
+
 ## 0.3.0 — 2026-10-13
 
 - LUT (`.cube`) adds diagonal color samples and color strip previews.
