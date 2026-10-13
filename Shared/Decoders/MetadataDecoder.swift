@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(FoundationXML)
 import FoundationXML
+#endif
 
 enum MetadataDecoder {
     static func decode(kind: FileSummary.Kind, text: String, data: Data) throws -> [String] {
