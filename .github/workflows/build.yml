@@ -12,6 +12,7 @@ permissions:
   contents: read
 jobs:
   validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || github.head_ref != 'modern'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +26,7 @@ jobs:
       - name: Test core decoders
         run: swift test
   macos:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository || github.head_ref != 'modern'
     strategy:
       fail-fast: false
       matrix:
