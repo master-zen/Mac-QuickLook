@@ -32,9 +32,21 @@ assert preview['NSExtension']['NSExtensionAttributes']['QLIsDataBasedPreview'] i
 assert set(x['UTTypeIdentifier'] for x in app['UTImportedTypeDeclarations']) == ids
 assert thumb['NSExtension']['NSExtensionAttributes']['QLThumbnailMinimumDimension'] == 32
 swift = (root / 'Shared/FileSummary.swift').read_text()
-for id in ids:
-    ext = id.rsplit('.', 1)[1]
-    assert re.search(r'case\s+"' + re.escape(ext) + r'"', swift)
+# A canonical system UTI is not necessarily named after its extension.
+for declaration in app['UTImportedTypeDeclarations']:
+    for ext in declaration['UTTypeTagSpecification']['public.filename-extension']:
+        assert re.search(r'case\s+"' + re.escape(ext) + r'"', swift), ext
+canonical = {
+    'gpx': 'com.topografix.gpx',
+    'vtt': 'org.w3.webvtt',
+}
+by_extension = {
+    ext: declaration['UTTypeIdentifier']
+    for declaration in app['UTImportedTypeDeclarations']
+    for ext in declaration['UTTypeTagSpecification']['public.filename-extension']
+}
+for ext, identifier in canonical.items():
+    assert by_extension[ext] == identifier, f'Incorrect macOS UTI for .{ext}'
 files = list(root.rglob('*'))
 assert not any(p.is_dir() and p.name.lower().endswith('.qlgenerator') for p in files)
 assert not any(p.suffix.lower() == '.pkg' for p in files)

@@ -43,7 +43,7 @@
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>cn.masterzen.quicklook.gpx</string>
+			<string>com.topografix.gpx</string>
 			<key>UTTypeDescription</key>
 			<string>GPS Exchange</string>
 			<key>UTTypeConformsTo</key>
@@ -79,7 +79,7 @@
 		</dict>
 		<dict>
 			<key>UTTypeIdentifier</key>
-			<string>cn.masterzen.quicklook.vtt</string>
+			<string>org.w3.webvtt</string>
 			<key>UTTypeDescription</key>
 			<string>WebVTT Subtitles</string>
 			<key>UTTypeConformsTo</key>
@@ -246,7 +246,7 @@
 		<dict>
 			<key>CFBundleTypeName</key><string>GPS Exchange</string>
 			<key>LSItemContentTypes</key>
-			<array><string>cn.masterzen.quicklook.gpx</string></array>
+			<array><string>com.topografix.gpx</string></array>
 			<key>CFBundleTypeRole</key><string>None</string>
 			<key>LSHandlerRank</key><string>None</string>
 		</dict>
@@ -260,7 +260,7 @@
 		<dict>
 			<key>CFBundleTypeName</key><string>WebVTT Subtitles</string>
 			<key>LSItemContentTypes</key>
-			<array><string>cn.masterzen.quicklook.vtt</string></array>
+			<array><string>org.w3.webvtt</string></array>
 			<key>CFBundleTypeRole</key><string>None</string>
 			<key>LSHandlerRank</key><string>None</string>
 		</dict>

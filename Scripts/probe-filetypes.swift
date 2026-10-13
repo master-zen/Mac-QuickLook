@@ -39,7 +39,7 @@ for type in types {
 if !mismatches.isEmpty {
     print("")
     print("UTI MISMATCH CANDIDATES: Finder may select a different preview provider.")
-    print("These are diagnostics, not failures: CI runners may have different apps registered.")
+    print("These are diagnostics, not failures: custom UTIs may resolve only after app installation.")
     for message in mismatches { print(message) }
 }
 

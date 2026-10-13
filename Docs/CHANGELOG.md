@@ -1,7 +1,8 @@
 # Changelog
 
-## 0.6.1 — Quick Look registration correction
+## 0.6.1 — Quick Look registration and UTI corrections
 
+- Uses verified canonical macOS UTIs for GPX (`com.topografix.gpx`) and VTT (`org.w3.webvtt`) on macOS 14/26/27 CI runners. Fixes the audit so it reads extensions from UTI tag declarations rather than UTI suffixes.
 - Reintroduces metadata-only document type registration with CFBundleTypeRole=None and LSHandlerRank=None so Launch Services can record custom UTIs without granting the host file-open or edit roles.
 - Audits and built-bundle verifier assert all 12 registrations have non-opening roles.
 - Adds macOS UTI probing and read-only signing/registration diagnostics after reports that an unsigned alpha failed in Finder.
