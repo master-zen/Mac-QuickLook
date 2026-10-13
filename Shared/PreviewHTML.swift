@@ -15,8 +15,8 @@ enum PreviewHTML {
         if summary.track.count > 1 {
             let points = TrackGeometry.normalized(summary.track)
             let path = points.enumerated().map { index, point in
-                let x = String(format: "%.2f", point.x * 800)
-                let y = String(format: "%.2f", point.y * 400)
+                let x = String(Int((point.x * 800).rounded()))
+                let y = String(Int((point.y * 400).rounded()))
                 return "\(index == 0 || point.breakBefore ? "M" : "L")\(x),\(y)"
             }.joined(separator: " ")
             visual = "<figure class=track><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 400\" role=\"img\" aria-label=\"GPS track outline\"><path d=\"\(path)\" fill=\"none\" stroke=\"#21a38e\" stroke-width=\"4\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/></svg><figcaption>Offline route outline · no base map or network access</figcaption></figure>"

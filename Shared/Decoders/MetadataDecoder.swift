@@ -142,10 +142,10 @@ enum MetadataDecoder {
         switch kind {
         case .vtt:
             guard text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("WEBVTT") else { throw FileSummary.ReadError.invalidFormat }
-            let cues = lines.filter { $0.contains("-->") }.count
+            let cues = lines.filter { isValidCueTime($0, kind: .vtt) }.count
             return ["Cues: \(cues)", "Format: WebVTT"]
         case .srt:
-            let cues = lines.filter { $0.contains("-->") }.count
+            let cues = lines.filter { isValidCueTime($0, kind: .srt) }.count
             guard cues > 0 else { throw FileSummary.ReadError.invalidFormat }
             return ["Cues: \(cues)", "Format: SubRip"]
         case .ass, .ssa:
@@ -155,6 +155,18 @@ enum MetadataDecoder {
             return ["Dialogue events: \(cues)", "Styles: \(styles)"]
         default: throw FileSummary.ReadError.unsupportedType
         }
+    }
+
+    private static let srtCueRegex = try! NSRegularExpression(
+        pattern: #"^\s*\d{2}:\d{2}:\d{2},\d{3}\s+-->\s+\d{2}:\d{2}:\d{2},\d{3}(?:\s|$)"#
+    )
+    private static let vttCueRegex = try! NSRegularExpression(
+        pattern: #"^\s*(?:\d{2}:)?\d{2}:\d{2}\.\d{3}\s+-->\s+(?:\d{2}:)?\d{2}:\d{2}\.\d{3}(?:\s|$)"#
+    )
+
+    private static func isValidCueTime(_ line: String, kind: FileSummary.Kind) -> Bool {
+        let regex = kind == .srt ? srtCueRegex : vttCueRegex
+        return regex.firstMatch(in: line, range: NSRange(line.startIndex..<line.endIndex, in: line)) != nil
     }
 
     static func gcode(_ text: String) throws -> [String] {

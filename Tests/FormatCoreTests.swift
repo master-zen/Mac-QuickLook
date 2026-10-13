@@ -312,3 +312,17 @@ extension FormatCoreTests {
         XCTAssertFalse(html.contains("<project"))
     }
 }
+
+extension FormatCoreTests {
+    func testSubtitleArrowInTextDoesNotCountAsCue() throws {
+        let url = try makeFile("arrow.srt", content: "1\n00:00:01,000 --> 00:00:03,000\nGo --> left\n")
+        defer { clear(url) }
+        XCTAssertTrue(try FileSummary.read(url).details.contains("Cues: 1"))
+    }
+
+    func testMalformedSubtitleTimingsRejected() throws {
+        let url = try makeFile("invalid.srt", content: "1\nHello --> World\n")
+        defer { clear(url) }
+        XCTAssertThrowsError(try FileSummary.read(url))
+    }
+}

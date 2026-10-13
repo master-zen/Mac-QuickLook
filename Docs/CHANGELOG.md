@@ -2,6 +2,9 @@
 
 ## 0.5.0 — 2026-10-13
 
+- Validates SRT and VTT cue timing rather than counting arbitrary arrows.
+- Uses locale-independent integer coordinates in SVG route paths.
+
 - Restores the complete decoders, fixtures, offline visualizations and legacy inventory in the remote modern branch.
 - Validates complete CUBE grids, duplicate sizes, mixed 1D/3D sampling, and bounded color sampling memory.
 - Rejects duplicate bencode dictionary keys and adds nine regression tests.
