@@ -13,14 +13,19 @@ assert app['NSPrincipalClass'] == 'NSApplication'
 assert app['LSMinimumSystemVersion'] == '13.0'
 entitlements = plistlib.loads((root / 'App/Entitlements.plist').read_bytes())
 assert entitlements['com.apple.security.app-sandbox'] is True
-assert entitlements['com.apple.security.files.user-selected.read-only'] is True
+assert 'com.apple.security.files.user-selected.read-only' not in entitlements
+# Imported UTIs are for Finder classification. The host must not register document handlers.
+assert 'CFBundleDocumentTypes' not in app
+host_source = (root / 'App/MacQuickLookModernApp.swift').read_text()
+for forbidden in ['NSOpenPanel', 'DocumentGroup(', 'fileImporter(', 'FileSummary.read(', 'startAccessingSecurityScopedResource']:
+    assert forbidden not in host_source, f'Quick Look-only host must not use {forbidden}'
 for plist in [preview, thumb]:
     ext = plist['NSExtension']
     supported = ext['NSExtensionAttributes']['QLSupportedContentTypes']
     assert set(supported) == ids and len(supported) == len(ids)
     assert ext['NSExtensionPointIdentifier'] in ['com.apple.quicklook.preview', 'com.apple.quicklook.thumbnail']
-docs = {x for row in app['CFBundleDocumentTypes'] for x in row['LSItemContentTypes']}
-assert docs == ids
+assert preview['NSExtension']['NSExtensionAttributes']['QLIsDataBasedPreview'] is True
+assert set(x['UTTypeIdentifier'] for x in app['UTImportedTypeDeclarations']) == ids
 assert thumb['NSExtension']['NSExtensionAttributes']['QLThumbnailMinimumDimension'] == 32
 swift = (root / 'Shared/FileSummary.swift').read_text()
 for id in ids:

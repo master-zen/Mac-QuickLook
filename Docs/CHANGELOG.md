@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-10-13 (Quick Look-only architecture)
+
+- Removes the host application's file-picker and in-app inspector, including sandbox permission to read user-selected files.
+- Removes all 12 document-open associations (CFBundleDocumentTypes); the app is not a file opener and does not claim default handlers.
+- Keeps imported UTIs and both system Preview/Thumbnail extensions so macOS still has file-type registrations for Quick Look.
+- CI auditing now rejects reintroduced open-file UI, document associations and file-picker entitlements.
+- Updates install, compatibility and Finder acceptance instructions. This is still a development preview until real Finder testing and notarization.
+
 ## 0.5.0 — 2026-10-13
 
 - Validates SRT and VTT cue timing rather than counting arbitrary arrows.

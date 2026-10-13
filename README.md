@@ -1,14 +1,14 @@
 # Mac QuickLook Modern
 
-统一的 macOS Finder 文件预览扩展项目。目标系统 **macOS 13–27**，一个宿主 App 内置一个 Preview Extension 和一个 Thumbnail Extension；不再分发多个旧式 `.qlgenerator` 或 `.pkg`。
+**仅为 Finder Quick Look 提供空格预览与缩略图；不做独立文件打开、播放、编辑或转换。** 目标系统 **macOS 13–27**，一个宿主 App 内置一个 Preview Extension 和一个 Thumbnail Extension；不再分发多个旧式 `.qlgenerator` 或 `.pkg`。
 
 This is a clean-room implementation inspired by the [Mac-QuickLook catalog](https://github.com/haokaiyang/Mac-QuickLook), not a binary conversion of the original plugin collection.
 
 ## 当前状态 / Status
 
 - 已实现 12 类文件解析器；核心 Swift 代码可使用 SwiftPM 在 Linux 上测试。
-- 已提供 XcodeGen macOS App 工程配置、两种 Quick Look 扩展、统一安装界面、CI、构建后完整性校验、打包/发布脚本。
-- v0.5.0：恢复完整解析模块，33 项 Swift 核心单元测试、Swift 源文件语法解析和本地元数据一致性检查；CI 增加 macOS 构建后 `.app/Contents/PlugIns` 校验。
+- 已提供 XcodeGen macOS 宿主容器、两种 Quick Look 扩展、CI、构建后完整性校验、打包/发布脚本。宿主不注册文件打开关联，也不提供文件选择或查看器。
+- v0.6.0：删除宿主 App 内置文件打开器和全部文档打开关联，只保留 Finder Quick Look 扩展。\n- v0.5.0：恢复完整解析模块，33 项 Swift 核心单元测试、Swift 源文件语法解析和本地元数据一致性检查；CI 增加 macOS 构建后 `.app/Contents/PlugIns` 校验。
 - 最新代码需以 GitHub Actions 实际运行结果为准。**Finder 实际调用、macOS 13 验收、Developer ID 签名与 Apple 公证仍未完成。**
 - 87 个原始二进制目录/安装包仅作为迁移登记，**并未全部重新实现**。见 `Docs/LEGACY_INVENTORY.csv`。
 
@@ -30,7 +30,7 @@ This is a clean-room implementation inspired by the [Mac-QuickLook catalog](http
 
 ```text
 MacQuickLookModern.app
-├── Main App                    SwiftUI · 导入文件自检 · 格式列表
+├── Main App                    SwiftUI · 只作 Quick Look 容器与使用说明
 ├── PlugIns/QuickLookPreview.appex
 │   └── QLPreviewProvider      HTML 数据预览
 └── PlugIns/QuickLookThumbnail.appex
@@ -70,7 +70,7 @@ swift test
 
 ## 安装与卸载
 
-安装单个**已签名并完成 Apple Notarization 的** `.app` 到 `/Applications`，启动一次，使用 Finder 的空格键预览对应文件。若系统将这些后缀绑定到其他内容类型，需要检查 UTI 映射与 Quick Look 扩展优先级；本项目不会强制覆盖其他应用。
+安装单个**已签名并完成 Apple Notarization 的** `.app` 到 `/Applications`，启动一次以便发现扩展，使用 Finder 的空格键预览对应文件。**双击文件不会打开本 App；本 App 不出现在“打开方式”候选中，也不修改默认打开程序。**若系统将这些后缀绑定到其他内容类型，需要检查 UTI 映射与 Quick Look 扩展优先级；本项目不会强制覆盖其他应用。
 
 卸载只需移除本 App。无需向 `~/Library/QuickLook` 手动复制或移除单独的旧式插件。不包含联网更新、管理守护进程或内核修改。
 
@@ -87,3 +87,9 @@ swift test
 ## Limitations
 
 文件大小限制 8 MiB，超出立即拒绝；解析器不执行代码、不加载网络资源、不解析 XML DTD/外部实体，不运行插件二进制。UTF-8 文本和带 BOM 的 UTF-16 文本受支持，其他历史字符编码未实现。ASE 色板的非 RGB 颜色只报告模型，避免不可靠的色彩转换。复杂视频解码、3D 实时渲染及所有旧插件的全量移植**未包含在当前版本**。
+
+## Quick Look-only invariant
+
+- 只有 `.appex` 负责解码和生成预览/缩略图；宿主 App 是最低限度的容器和提示界面。
+- `UTImportedTypeDeclarations` 告诉系统如何识别扩展名；**不声明** `CFBundleDocumentTypes`。已有 App 的默认打开方式保持原样。
+- 受 macOS 文件类型系统和提供程序选择策略影响，Finder 是否选用本扩展仍须通过 `mdls` 和 `pluginkit` 实机验证。

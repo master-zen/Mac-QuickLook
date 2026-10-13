@@ -11,6 +11,10 @@ assert info['LSMinimumSystemVersion'].startswith('13.')
 assert (app / 'Contents/MacOS/MacQuickLookModern').is_file()
 content_types = {item['UTTypeIdentifier'] for item in info['UTImportedTypeDeclarations']}
 assert len(content_types) == 12
+# A Finder-only Quick Look app must never become a file-opening candidate.
+assert 'CFBundleDocumentTypes' not in info
+# Entitlements are verified at source/CI with Scripts/audit.py; a signed bundle
+# can be inspected with codesign separately.
 for name, identifier in [('QuickLookPreview', 'com.apple.quicklook.preview'), ('QuickLookThumbnail', 'com.apple.quicklook.thumbnail')]:
     bundle = app / 'Contents/PlugIns' / (name + '.appex')
     assert bundle.is_dir(), f'Missing {name}.appex'
